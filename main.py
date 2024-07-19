@@ -7,20 +7,19 @@ session = boto3.Session()
 # Obtain the SageMaker client
 sagemaker_client = session.client('sagemaker')
 
-# List all endpoints
-endpoints_response = sagemaker_client.list_endpoints()
+# List all inference components
+sagemaker_interface_components = sagemaker_client.list_inference_components()
+
+# Retrieve the endpoint and inference component names
+endpoint_name = sagemaker_interface_components['InferenceComponents'][0]['EndpointName']
+inference_component_name = sagemaker_interface_components['InferenceComponents'][0]['InferenceComponentName']
 
 # Check if there are any available endpoints
-if not endpoints_response['Endpoints']:
-    print("No endpoints found.")
+if not inference_component_name:
+    print("No interface component found.")
 else:
-    # Alert if there is more than one endpoint
-    if len(endpoints_response['Endpoints']) > 1:
-        print(f"Warning: More than one endpoint found. Using the first one: {endpoints_response['Endpoints'][0]['EndpointName']}")
-    
-    # Get the name of the first endpoint in the list
-    endpoint_name = endpoints_response['Endpoints'][0]['EndpointName']
     print(f"Using endpoint: {endpoint_name}")
+    print(f"Using interface: {inference_component_name}")
 
 def query_endpoint(input_text, max_new_tokens=50, top_k=None, top_p=None, do_sample=False):
     """
@@ -33,6 +32,8 @@ def query_endpoint(input_text, max_new_tokens=50, top_k=None, top_p=None, do_sam
             "max_new_tokens": max_new_tokens,
         }
     }
+    
+    # Add optional parameters if they are provided
     if top_k is not None:
         payload["parameters"]["top_k"] = top_k
     if top_p is not None:
@@ -40,18 +41,20 @@ def query_endpoint(input_text, max_new_tokens=50, top_k=None, top_p=None, do_sam
     if do_sample:
         payload["parameters"]["do_sample"] = do_sample
 
+    # Invoke the SageMaker endpoint with the payload
     response = sagemaker_runtime_client.invoke_endpoint(
         EndpointName=endpoint_name,
-        InferenceComponentName='huggingface-text2text-flan-t5-xl-20240718-200203',
+        InferenceComponentName=inference_component_name,
         ContentType="application/json",
         Body=json.dumps(payload).encode("utf-8")
     )
     
+    # Parse and print the model's predictions
     model_predictions = json.loads(response["Body"].read())
     generated_text = model_predictions[0]["generated_text"]
     print(f"Input Text: {input_text}\nGenerated Text: {generated_text}\n")
 
-# Define questions
+# Define questions to query the endpoint
 question1 = "What is AWS Lambda?"
 question2 = "Explain the benefits of using Amazon S3."
 question3 = "How can I secure my AWS infrastructure?"

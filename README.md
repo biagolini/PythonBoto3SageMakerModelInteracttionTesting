@@ -17,7 +17,7 @@ This repository contains a script to test the Flan-T5 XL model (https://huggingf
 
 ## Usage
 
-1. **Script Execution**: The script `sagemaker_flan_t5_test.py` does the following:
+1. **Script Execution**: The script `main.py` does the following:
 
    - Creates a session with configured AWS credentials.
    - Lists available SageMaker endpoints.
@@ -26,7 +26,7 @@ This repository contains a script to test the Flan-T5 XL model (https://huggingf
 
 2. **Running the Script**:
    ```sh
-   python sagemaker_flan_t5_test.py
+   python main.py
    ```
 
 ## Parameter Explanation
